@@ -1,11 +1,12 @@
 import { Router } from "express";
+import { desc } from "drizzle-orm";
 import {
   createMatchSchema,
   listMatchesQuerySchema,
-} from "../validation/matches";
-import { matches } from "../db/schema";
+} from "../validation/matches.js";
+import { matches } from "../db/schema.js";
 import { db } from "../db/db.js";
-import { getMatchStatus } from "../utils/match-status";
+import { getMatchStatus } from "../utils/match-status.js";
 
 export const matchRouter = Router();
 
@@ -21,7 +22,7 @@ matchRouter.get("/", async (req, res) => {
     });
   }
 
-  const limit = Math.min(parseData.data.limit ?? 50, MAX_LIMIT);
+  const limit = Math.min(parsed.data.data.limit ?? 50, MAX_LIMIT);
 
   try {
     const data = await db
@@ -37,16 +38,15 @@ matchRouter.get("/", async (req, res) => {
 
 matchRouter.post("/", async (req, res) => {
   const parsed = createMatchSchema.safeParse(req.body);
-  const {
-    data: { startTime, endTime, homeScore, awayScore },
-  } = parsed;
 
   if (!parsed.success) {
     return res.status(400).json({
       error: "Invalid payload.",
-      details: JSON.stringify(parsed.error),
+      details: parsed.error.issues,
     });
   }
+
+  const { startTime, endTime, homeScore, awayScore } = parsed.data;
 
   try {
     const [event] = await db
@@ -63,8 +63,7 @@ matchRouter.post("/", async (req, res) => {
 
     res.status(201).json({ data: event });
   } catch (e) {
-    res
-      .status(500)
-      .json({ error: "Field to create match.", details: JSON.stringify(e) });
+    console.error("Failed to create match", e);
+    res.status(500).json({ error: "Failed to create match." });
   }
 });
