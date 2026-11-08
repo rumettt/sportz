@@ -22,7 +22,7 @@ matchRouter.get("/", async (req, res) => {
     });
   }
 
-  const limit = Math.min(parsed.data.data.limit ?? 50, MAX_LIMIT);
+  const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
 
   try {
     const data = await db
